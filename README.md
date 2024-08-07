@@ -1,8 +1,8 @@
 # Eth_Project_2
+The main aim of this project is to learn about deploying smart contacts
 
-### Objective
-This project is the Student Account Management contract in which there is an employee(database manager) can be able to add the details of new student only if he enters his correct id. Further more, the student will be able to register themself if he took admission. For the registration process, he needs to pay the complete fee.
-The employee could be able to maintain the record of all students and identify them through their unique id's (roll no.).
+### Description
+This project is the Student Account Management contract in which there is an employee(database manager) who can insert the details of new student if and only if he enters his correct ecode (employee id). The details of students entered could be seen by using their unique identifiers (roll no.) under the details mapping. The student's admission is confirmed by the database manager (if he inserted the details means student is enrolled in some course). Further more, the student can register themselves once they paid their complete academic fees. The transaction made by student will reflect in the owner's account. Functions like stRegistration, payFee are ensuring the above things and different mappings are used in this contract.
 
 The contract is deployed with frontend and can be accessed after cloning the github by using the below steps-
   1. Inside the project directory, in the terminal type: npm i
