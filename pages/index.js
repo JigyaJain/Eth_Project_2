@@ -10,14 +10,16 @@ export default function HomePage() {
   const [rollNo, setRollNo] = useState(0);
   const [name, setName] = useState("");
   const [program, setProgram] = useState("");
-  const [section, setSection] = useState(0);
-  const [percent, setPercent] = useState(0);
+  const [section, setSection] = useState();
+  const [percent, setPercent] = useState();
   const [amountToPay, setAmountToPay] = useState(undefined);
-  const [paidAmount, setPaidAmount] = useState(0);
+  const [paidAmount, setPaidAmount] = useState();
   const [eCode, setECode] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
   const [status, setStatus] = useState("");
+  const [studentInfo, setStudentInfo] = useState({});
 
-  const contractAddress = "0x85C72a25AA15166F14B98Fd23c8631C03afc1aC6"; 
+  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; 
   const studentAccountABI = studentAccountAbi.abi;
 
   const getWallet = async () => {
@@ -60,29 +62,53 @@ export default function HomePage() {
     setStudentAccount(studentAccountContract);
   };
 
+  const verifyECode = async () => {
+    if (studentAccount && eCode) {
+      try {
+        await studentAccount.enterECode(eCode); // Using the enterECode function to validate the eCode
+        setIsVerified(true);
+      } catch (error) {
+        alert("eCode verification failed!");
+      }
+    }
+  };
+
   const getAccountDetails = async () => {
     if (studentAccount) {
       await studentAccount.getAccountDetails(rollNo);
       const amount = await studentAccount.amountToPay(rollNo);
-      setAmountToPay(amount.toNumber());
+      setAmountToPay(ethers.utils.formatUnits(amount, 18));
       console.log("Amount to Pay: ", amountToPay);
     }
   };
 
   const payFee = async () => {
     if (studentAccount && paidAmount > 0) {
-      let tx = await studentAccount.payFee(rollNo, paidAmount);
+      let tx = await studentAccount.payFee(rollNo, ethers.utils.parseUnits(paidAmount.toString(), 18));
       await tx.wait();
       getAccountDetails();
     }
   };
 
   const enterStDetails = async () => {
-    if (studentAccount && eCode) {
+    if (studentAccount && isVerified) {
       let tx = await studentAccount.enterStDetails(name, program, section, percent, { from: account });
       await tx.wait();
       setRollNo(rollNo + 1);
       getAccountDetails();
+      fetchStudentInfo(rollNo + 1); // Fetch student info after entering details
+    }
+  };
+
+  const fetchStudentInfo = async (rollNumber) => {
+    if (studentAccount) {
+      const info = await studentAccount.details(rollNumber);
+      setStudentInfo({
+        name: info.name,
+        program: info.program,
+        section: info.section,
+        academicFees: info.academicFees.toNumber(),
+      });
     }
   };
 
@@ -107,9 +133,22 @@ export default function HomePage() {
       );
     }
 
-    if (amountToPay === undefined) {
-      getAccountDetails();
-    }
+    // if (amountToPay === undefined) {
+    //   getAccountDetails();
+    // }
+    if (!isVerified) {
+      return (
+        <div>
+          <input
+            type="text"
+            value={eCode}
+            onChange={(e) => setECode(e.target.value)}
+            placeholder="Enter eCode"
+          />
+          <button onClick={verifyECode}>Verify eCode</button>
+        </div>
+      );
+    }    
 
     return (
       <div>
@@ -142,12 +181,6 @@ export default function HomePage() {
             onChange={(e) => setPercent(Number(e.target.value))}
             placeholder="Percent"
           />
-          <input
-            type="text"
-            value={eCode}
-            onChange={(e) => setECode(e.target.value)}
-            placeholder="ECode"
-          />
           <button onClick={enterStDetails}>Enter Student Details</button>
         </div>
         <div>
@@ -162,6 +195,15 @@ export default function HomePage() {
         <div>
           <button onClick={stRegistration}>Check Registration</button>
         </div>
+        {studentInfo.name && (
+          <div>
+            <h3>Student Info</h3>
+            <p>Name: {studentInfo.name}</p>
+            <p>Program: {studentInfo.program}</p>
+            <p>Section: {studentInfo.section}</p>
+            <p>Academic Fees: {studentInfo.academicFees}</p>
+          </div>
+        )}
       </div>
     );
   };
