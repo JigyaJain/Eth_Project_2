@@ -64,12 +64,9 @@ contract StudentAccount{
         academicFees -= academicFees*scholarShip/100;
         
         details[++rollNo] = info(_name, _program, _section, academicFees);
+        amountToPay[rollNo] = details[rollNo].academicFees;
         return info(_name, _program, _section, academicFees);
         
-    }
-
-    function getAccountDetails(uint _id) public {
-        amountToPay[_id] = details[_id].academicFees;
     }
 
     function payFee(uint _id, uint _amount) public returns (uint){
@@ -82,7 +79,7 @@ contract StudentAccount{
 
     function stRegistration( uint _id) public view returns (string memory){
         string memory status = "Registered";
-        if (amountToPay[_id] == 0){
+        if (amountToPay[_id] == 0 ){
             return status;
         }
 
@@ -93,4 +90,3 @@ contract StudentAccount{
     }
     
 }
-
