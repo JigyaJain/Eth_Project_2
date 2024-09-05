@@ -1,26 +1,22 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import studentAccountAbi from "../artifacts/contracts/StudentAccount.sol/StudentAccount.json";
+import atm_abi from "../artifacts/contracts/Assessment.sol/Assessment.json";
 
 export default function HomePage() {
   const [ethWallet, setEthWallet] = useState(undefined);
   const [account, setAccount] = useState(undefined);
-  const [studentAccount, setStudentAccount] = useState(undefined);
+  const [atm, setATM] = useState(undefined);
   const [balance, setBalance] = useState(undefined);
-  const [rollNo, setRollNo] = useState(0);
-  const [name, setName] = useState("");
-  const [program, setProgram] = useState("");
-  const [section, setSection] = useState();
-  const [percent, setPercent] = useState();
-  const [amountToPay, setAmountToPay] = useState(undefined);
-  const [paidAmount, setPaidAmount] = useState();
-  const [eCode, setECode] = useState("");
-  const [isVerified, setIsVerified] = useState(false);
-  const [status, setStatus] = useState("");
-  const [studentInfo, setStudentInfo] = useState({});
+  const [userName, setUserName] = useState("");
+  const [depositAmount, setDepositAmount] = useState(0);
+  const [withdrawAmount, setWithdrawAmount] = useState(0);
+  const [newUserName, setNewUserName] = useState("");
+  const [itemsForSale, setItemsForSale] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [itemIndex, setItemIndex] = useState("");
 
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; 
-  const studentAccountABI = studentAccountAbi.abi;
+  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  const atmABI = atm_abi.abi;
 
   const getWallet = async () => {
     if (window.ethereum) {
@@ -34,7 +30,7 @@ export default function HomePage() {
   };
 
   const handleAccount = (account) => {
-    if (account.length > 0) {
+    if (account) {
       console.log("Account connected: ", account);
       setAccount(account[0]);
     } else {
@@ -48,162 +44,151 @@ export default function HomePage() {
       return;
     }
 
+    const name = prompt("Please enter your name:");
+    setNewUserName(name);
+
     const accounts = await ethWallet.request({ method: "eth_requestAccounts" });
     handleAccount(accounts);
 
-    getStudentAccountContract();
+    getATMContract(name);
   };
 
-  const getStudentAccountContract = () => {
+  const getATMContract = async (name) => {
     const provider = new ethers.providers.Web3Provider(ethWallet);
     const signer = provider.getSigner();
-    const studentAccountContract = new ethers.Contract(contractAddress, studentAccountABI, signer);
+    const atmContract = new ethers.Contract(contractAddress, atmABI, signer);
 
-    setStudentAccount(studentAccountContract);
+    setATM(atmContract);
+
+    if (name) {
+      await atmContract.setName(name);
+      setUserName(name);
+    }
+
+    getBalance();
+    getInventory();
   };
 
-  const verifyECode = async () => {
-    if (studentAccount && eCode) {
-      try {
-        await studentAccount.enterECode(eCode); // Using the enterECode function to validate the eCode
-        setIsVerified(true);
-      } catch (error) {
-        alert("eCode verification failed!");
-      }
+  const getBalance = async () => {
+    if (atm) {
+      setBalance((await atm.getBalance()).toNumber());
     }
   };
 
-  const getAccountDetails = async () => {
-    if (studentAccount) {
-      await studentAccount.getAccountDetails(rollNo);
-      const amount = await studentAccount.amountToPay(rollNo);
-      setAmountToPay(ethers.utils.formatUnits(amount, 18));
-      console.log("Amount to Pay: ", amountToPay);
+  const getItemsForSale = async () => {
+    if (atm) {
+      const items = await atm.getItemForSale();
+      setItemsForSale(items);
     }
   };
 
-  const payFee = async () => {
-    if (studentAccount && paidAmount > 0) {
-      let tx = await studentAccount.payFee(rollNo, ethers.utils.parseUnits(paidAmount.toString(), 18));
+  const getInventory = async () => {
+    if (atm) {
+      const inv = await atm.getInventory();
+      setInventory(inv);
+    }
+  };
+
+  const buyItem = async () => {
+    if (atm && itemIndex) {
+      const tx = await atm.buyItem(itemIndex);
       await tx.wait();
-      getAccountDetails();
+      getBalance();
+      getInventory();
     }
   };
 
-  const enterStDetails = async () => {
-    if (studentAccount && isVerified) {
-      let tx = await studentAccount.enterStDetails(name, program, section, percent, { from: account });
+  const deposit = async () => {
+    if (atm) {
+      let tx = await atm.deposit(depositAmount);
       await tx.wait();
-      setRollNo(rollNo + 1);
-      getAccountDetails();
-      fetchStudentInfo(rollNo + 1); // Fetch student info after entering details
+      getBalance();
     }
   };
 
-  const fetchStudentInfo = async (rollNumber) => {
-    if (studentAccount) {
-      const info = await studentAccount.details(rollNumber);
-      setStudentInfo({
-        name: info.name,
-        program: info.program,
-        section: info.section,
-        academicFees: info.academicFees.toNumber(),
-      });
-    }
-  };
-
-  const stRegistration = async () => {
-    if (studentAccount) {
-      const status = await studentAccount.stRegistration(rollNo);
-      setStatus(status);
-      console.log("Registration Status: ", status);
+  const withdraw = async () => {
+    if (atm) {
+      let tx = await atm.withdraw(withdrawAmount);
+      await tx.wait();
+      getBalance();
     }
   };
 
   const initUser = () => {
     if (!ethWallet) {
-      return <p>Please install MetaMask to use this application.</p>;
+      return <p>Please install Metamask in order to use this ATM.</p>;
     }
 
     if (!account) {
       return (
-        <button onClick={connectAccount}>
-          Please connect your MetaMask wallet
+        <button
+          onClick={connectAccount}
+          style={styles.button}
+        >
+          Please connect your Metamask wallet
         </button>
       );
     }
 
-    // if (amountToPay === undefined) {
-    //   getAccountDetails();
-    // }
-    if (!isVerified) {
-      return (
-        <div>
-          <input
-            type="text"
-            value={eCode}
-            onChange={(e) => setECode(e.target.value)}
-            placeholder="Enter eCode"
-          />
-          <button onClick={verifyECode}>Verify eCode</button>
-        </div>
-      );
-    }    
+    if (balance === undefined) {
+      getBalance();
+    }
 
     return (
-      <div>
-        <p>Your Account: {account}</p>
-        <p>Roll Number: {rollNo}</p>
-        <p>Amount to Pay: {amountToPay}</p>
-        <p>Status: {status}</p>
-        <div>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Student Name"
-          />
-          <input
-            type="text"
-            value={program}
-            onChange={(e) => setProgram(e.target.value)}
-            placeholder="Program"
-          />
+      <div style={styles.container}>
+        <div style={styles.accountInfo}>
+          <p><b>Your Name: </b>{userName}</p>
+          <p><b>Your Account: </b>{account}</p>
+          <p><b>Your Balance:</b> {balance} ETH</p>
+          <p><b>Your Inventory:</b></p>
+          <ul>
+            {Array.isArray(inventory) && inventory.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div style={styles.section}>
+          <h3>Deposit</h3>
           <input
             type="number"
-            value={section}
-            onChange={(e) => setSection(Number(e.target.value))}
-            placeholder="Section"
+            placeholder="Amount to Deposit"
+            value={depositAmount}
+            onChange={(e) => setDepositAmount(Number(e.target.value))}
+            style={styles.input}
           />
+          <button onClick={deposit} style={styles.button}>Deposit</button>
+        </div>
+        <div style={styles.section}>
+          <h3>Withdraw</h3>
           <input
             type="number"
-            value={percent}
-            onChange={(e) => setPercent(Number(e.target.value))}
-            placeholder="Percent"
+            placeholder="Amount to Withdraw"
+            value={withdrawAmount}
+            onChange={(e) => setWithdrawAmount(Number(e.target.value))}
+            style={styles.input}
           />
-          <button onClick={enterStDetails}>Enter Student Details</button>
+          <button onClick={withdraw} style={styles.button}>Withdraw</button>
         </div>
-        <div>
+        <div style={styles.section}>
+          <h3>Items for Sale</h3>
+          <button onClick={getItemsForSale} style={styles.button}>Show Items for Sale</button>
+          <ul>
+            {Array.isArray(itemsForSale) && itemsForSale.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div style={styles.section}>
+          <h3>Buy Item</h3>
           <input
             type="number"
-            value={paidAmount}
-            onChange={(e) => setPaidAmount(Number(e.target.value))}
-            placeholder="Pay Amount"
+            placeholder="Item Index"
+            value={itemIndex}
+            onChange={(e) => setItemIndex(Number(e.target.value))}
+            style={styles.input}
           />
-          <button onClick={payFee}>Pay Fee</button>
+          <button onClick={buyItem} style={styles.button}>Buy Item</button>
         </div>
-        <div>
-          <button onClick={stRegistration}>Check Registration</button>
-        </div>
-        {studentInfo.name && (
-          <div>
-            <h3>Student Info</h3>
-            <p>Name: {studentInfo.name}</p>
-            <p>Program: {studentInfo.program}</p>
-            <p>Section: {studentInfo.section}</p>
-            <p>Academic Fees: {studentInfo.academicFees}</p>
-          </div>
-        )}
       </div>
     );
   };
@@ -212,19 +197,57 @@ export default function HomePage() {
     getWallet();
   }, []);
 
+  const styles = {
+    container: {
+      backgroundColor: 'white',
+      borderRadius: '15px',
+      padding: '20px',
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+      textAlign: 'center',
+      width: '50%',
+      margin: 'auto',
+      marginTop: '4%',
+    },
+    accountInfo: {
+      backgroundColor: '#f0f0f0',
+      borderRadius: '10px',
+      padding: '10px',
+      margin: '10px 0',
+    },
+    section: {
+      margin: '20px 0',
+    },
+    input: {
+      padding: '10px',
+      margin: '10px 0',
+      borderRadius: '5px',
+      border: '1px solid #ccc',
+      width: '80%',
+    },
+    button: {
+      padding: '10px 20px',
+      border: 'none',
+      borderRadius: '5px',
+      backgroundColor: 'red',
+      color: 'white',
+      cursor: 'pointer',
+    },
+    header: {
+      textAlign: 'center',
+      margin: '20px 0',
+      borderRadius: '15px',
+      backgroundColor: 'red',
+      width: '30%',
+      margin: 'auto',
+      marginTop: '10%',
+    }
+  };
+
   return (
-    <main className="container">
-      <header>
-        <h1>Student Account Management</h1>
-      </header>
+    <main style={styles.main}>
+      <header style={styles.header}><h1>Welcome to the Store</h1></header>
+        
       {initUser()}
-      <style jsx>
-        {`
-          .container {
-            text-align: center;
-          }
-        `}
-      </style>
     </main>
   );
 }
