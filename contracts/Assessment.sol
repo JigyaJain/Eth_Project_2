@@ -83,7 +83,8 @@ contract Assessment {
             MyInventory.push("Marine Outfit");
             emit GetItem(_value, "Marine Outfit");
             return "You now have a Legendary Marine Outfit";
-        } else {
+        } 
+            else {
             emit GetItem(_value, "Wrong index position");
             return "There is no item at such index for sale";
         }
