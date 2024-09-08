@@ -8,13 +8,13 @@ The application requires a connection to the blockchain wallet that allows the t
 ### Frontend
 The index.js file provided in this repository serves as the frontend component of the application, allowing users to interact with the deployed smart contract using a web interface. Here are the key functionalities of index.js:
 
-“*” Connect Metamask Wallet: Users can connect their MetaMask wallets to the dApp.
- • Set User Name: Users can set their names associated with their Ethereum addresses.
- • Deposit Ether: Users can deposit Ether into their accounts via the frontend interface.
- • Withdraw Funds: Users can initiate fund withdrawals directly from the frontend.
- • Item For Sale: Users can check which type of item are for sale.
- • Buy Item: Users can spend their balance to buy item from the store.
- • Check Inventory: Users are now able to see thier inventory item.
+* Connect Metamask Wallet: Users can connect their MetaMask wallets to the dApp.
+* Set User Name: Users can set their names associated with their Ethereum addresses.
+* Deposit Ether: Users can deposit Ether into their accounts via the frontend interface.
+* Withdraw Funds: Users can initiate fund withdrawals directly from the frontend.
+* Item For Sale: Users can check which type of item are for sale.
+* Buy Item: Users can spend their balance to buy item from the store.
+* Check Inventory: Users are now able to see thier inventory item.
 The index.js file uses ethers.js library to interact with the Ethereum blockchain, providing a seamless user experience for managing balances and transactions.
 
 ## Getting Started
