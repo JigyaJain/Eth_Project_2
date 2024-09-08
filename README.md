@@ -8,7 +8,7 @@ The application requires a connection to the blockchain wallet that allows the t
 ### Frontend
 The index.js file provided in this repository serves as the frontend component of the application, allowing users to interact with the deployed smart contract using a web interface. Here are the key functionalities of index.js:
 
- ** Connect Metamask Wallet: Users can connect their MetaMask wallets to the dApp.
+“*”Connect Metamask Wallet: Users can connect their MetaMask wallets to the dApp.
  • Set User Name: Users can set their names associated with their Ethereum addresses.
  • Deposit Ether: Users can deposit Ether into their accounts via the frontend interface.
  • Withdraw Funds: Users can initiate fund withdrawals directly from the frontend.
